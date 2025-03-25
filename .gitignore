@@ -1,0 +1,30 @@
+# 🐍 Python / Backend
+venv/
+__pycache__/
+*.pyc
+*.db
+*.sqlite3
+.env
+open-webui/
+
+# 📦 Node.js / Frontend
+node_modules/
+dist/
+.build/
+.svelte-kit/
+
+# ⚙️ Logs, sistemas y demás
+*.log
+.DS_Store
+*.swp
+
+# ⚠️ Archivos sensibles o temporales
+.env.*
+*.bak
+*.tmp
+
+# 📝 VS Code settings
+.vscode/
+
+open-webui/
+open-webui/
