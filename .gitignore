@@ -12,6 +12,7 @@ node_modules/
 dist/
 .build/
 .svelte-kit/
+*.log/
 
 # ⚙️ Logs, sistemas y demás
 *.log
@@ -28,3 +29,4 @@ dist/
 
 open-webui/
 open-webui/
+
