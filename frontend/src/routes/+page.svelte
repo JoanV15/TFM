@@ -2,8 +2,8 @@
 	import Filters from '$lib/components/Filters.svelte';
 	import InteractionList from '$lib/components/InteractionList.svelte';
 	import type { Interaction } from '$lib/types';
-
-	let allInteractions: Interaction[] = [
+/*
+	 let allInteractions: Interaction[] = [
 		{
 			id: 1,
 			prompt: '¿Qué es la inflación?',
@@ -18,7 +18,7 @@
 			thumbs: 'down',
 			timestamp: '2025-03-27'
 		}
-	];
+	]; 
 
 	let filteredInteractions = [...allInteractions];
 
@@ -39,10 +39,14 @@
 	}
 </script>
 
+*/
 <section class="mx-auto max-w-5xl p-6">
+	/*
 	<h1 class="mb-4 text-2xl font-bold">Interacciones registradas</h1>
 
 	<Filters on:filterchange={handleFilterChange} />
 
 	<InteractionList interactions={filteredInteractions} />
+	*/
+	<h1>Hola Anna</h1>
 </section>
