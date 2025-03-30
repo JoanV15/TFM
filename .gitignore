@@ -1,32 +1,51 @@
-# 🐍 Python / Backend
-venv/
-__pycache__/
-*.pyc
-*.db
-*.sqlite3
-.env
-open-webui/
+# =============================
+# 🔁 General
+# =============================
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
 
+# =============================
+# 🐍 Python / Backend
+# =============================
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.db
+*.db-journal
+.env
+.env.*
+venv/
+webui.db
+
+# =============================
 # 📦 Node.js / Frontend
+# =============================
 node_modules/
 dist/
 .build/
+.output/
 .svelte-kit/
-*.log/
+.vite/
+*.tsbuildinfo
 
-# ⚙️ Logs, sistemas y demás
-*.log
-.DS_Store
-*.swp
+# Evita conflictos con lockfiles alternativos
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# ⚠️ Archivos sensibles o temporales
-.env.*
-*.bak
-*.tmp
-
-# 📝 VS Code settings
+# =============================
+# ⚙️ VSCode / IDE / Sistema
+# =============================
 .vscode/
+.idea/
+*.code-workspace
 
-open-webui/
-open-webui/
-
+# =============================
+# 🚫 Archivos duplicados o no usados
+# =============================
+open-webui/  # Parece estar ignorado 2 veces, solo se necesita una línea
