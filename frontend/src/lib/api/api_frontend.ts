@@ -4,50 +4,39 @@ import { PUBLIC_BACKEND_URL } from '$lib/config';
 export type InteractionFilters = {
     limit?: number;
     offset?: number;
-    role?: string;
     rating?: number;
+    score?: number | 'null';
     model?: string;
-    tags?: string;
+    tag?: string;
+    date_from?: string;
+    date_to?: string;
+    search?: string;
 };
 
-// GET /interactions con filtros y paginación
 export async function getInteractions(filters: InteractionFilters = {}): Promise<Interaction[]> {
     const params = new URLSearchParams();
 
     if (filters.limit) params.append('limit', filters.limit.toString());
     if (filters.offset) params.append('offset', filters.offset.toString());
-    if (filters.role) params.append('role', filters.role);
     if (filters.rating !== undefined) params.append('rating', filters.rating.toString());
+    if (filters.score !== undefined) params.append('score', filters.score.toString());
     if (filters.model) params.append('model', filters.model);
-    if (filters.tags) params.append('tags', filters.tags);
-    if ((filters as any).date_from) params.append('date_from', (filters as any).date_from);
-    if ((filters as any).date_to) params.append('date_to', (filters as any).date_to);
-    if ((filters as any).search) params.append('search', (filters as any).search);
+    if (filters.tag) params.append('tag', filters.tag);
+    if (filters.date_from) params.append('date_from', filters.date_from);
+    if (filters.date_to) params.append('date_to', filters.date_to);
+    if (filters.search) params.append('search', filters.search);
 
     const url = `${PUBLIC_BACKEND_URL}/interactions?${params.toString()}`;
-    console.log("🌐 GET /interactions →", url);
-
     const res = await fetch(url);
 
     if (!res.ok) {
-        const text = await res.text();
-        console.error("❌ Error HTTP:", res.status, text);
         throw new Error(`Error al obtener las interacciones: ${res.status}`);
     }
 
-    try {
-        const json = await res.json();
-        console.log("📦 JSON recibido:", json);
-        return json;
-    } catch (err) {
-        console.error("❌ Error al parsear JSON:", err);
-        throw new Error("Error al interpretar la respuesta del servidor");
-    }
+    return await res.json();
 }
 
-
-// GET /interactions/{id}
-export async function getInteractionById(id: number): Promise<Interaction> {
+export async function getInteractionById(id: string): Promise<Interaction> {
     const res = await fetch(`${PUBLIC_BACKEND_URL}/interactions/${id}`);
 
     if (!res.ok) {
@@ -57,8 +46,8 @@ export async function getInteractionById(id: number): Promise<Interaction> {
     return await res.json();
 }
 
-// POST /evaluation/{id}
-export async function postEvaluation(id: number, data: {
+export async function postEvaluation(id: string, data: {
+    rating?: number;
     score?: number;
     notes?: string;
     tags?: string[];
@@ -74,11 +63,8 @@ export async function postEvaluation(id: number, data: {
     }
 }
 
-// GET /stats
 export type StatsResponse = {
     total_interactions: number;
-    total_user_messages: number;
-    total_assistant_messages: number;
     rated_positive: number;
     rated_negative: number;
     rated_neutral: number;

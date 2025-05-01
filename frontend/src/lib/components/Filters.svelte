@@ -3,11 +3,11 @@
 
 	const dispatch = createEventDispatcher();
 
-	// Props desde +page.svelte
 	export let availableModels: string[] = [];
 	export let availableTags: string[] = [];
 
-	let rating: 'all' | 'positive' | 'negative' = 'all';
+	let rating: string = '';
+	let score: string = '';
 	let model = '';
 	let tag = '';
 	let dateFrom = '';
@@ -16,25 +16,59 @@
 
 	function applyFilters() {
 		dispatch('filterchange', {
-			rating: rating === 'positive' ? 10 : rating === 'negative' ? 0 : null,
+			rating: rating !== '' ? parseInt(rating) : null,
+			score: score !== '' ? (score === '-1' ? 'null' : parseInt(score)) : null,
 			model: model || null,
-			tags: tag || null,
+			tag: tag || null,
 			dateFrom,
 			dateTo,
 			search
+		});
+	}
+
+	function resetFilters() {
+		rating = '';
+		score = '';
+		model = '';
+		tag = '';
+		dateFrom = '';
+		dateTo = '';
+		search = '';
+
+		dispatch('filterchange', {
+			rating: null,
+			score: null,
+			model: null,
+			tag: null,
+			dateFrom: '',
+			dateTo: '',
+			search: ''
 		});
 	}
 </script>
 
 <div class="mb-4 space-y-4 rounded-xl bg-gray-50 p-4 shadow">
 	<div class="flex flex-wrap items-end gap-4">
-		<!-- Evaluación -->
+		<!-- Rating -->
 		<div>
-			<label for="rating" class="block text-sm text-gray-700">Evaluación</label>
+			<label for="rating" class="block text-sm text-gray-700">Thumbs (👍👎)</label>
 			<select id="rating" bind:value={rating} class="mt-1 w-full rounded border px-3 py-2">
-				<option value="all">Todas</option>
-				<option value="positive">👍 Positivas</option>
-				<option value="negative">👎 Negativas</option>
+				<option value="">Todas</option>
+				<option value="1">👍</option>
+				<option value="0">–</option>
+				<option value="-1">👎</option>
+			</select>
+		</div>
+
+		<!-- Score -->
+		<div>
+			<label for="score" class="block text-sm text-gray-700">Score</label>
+			<select id="score" bind:value={score} class="mt-1 w-full rounded border px-3 py-2">
+				<option value="">Todos</option>
+				<option value="-1">– Sin evaluar</option>
+				{#each Array.from({ length: 11 }) as _, i}
+					<option value={i}>{i}</option>
+				{/each}
 			</select>
 		</div>
 
@@ -84,22 +118,34 @@
 
 		<!-- Texto libre -->
 		<div class="min-w-[200px] flex-1">
-			<label for="search-text" class="block text-sm text-gray-700">Texto libre</label>
+			<label for="search-text" class="block text-sm text-gray-700"
+				>Búsqueda por frase o palabras</label
+			>
 			<input
 				id="search-text"
 				type="text"
 				placeholder="Buscar..."
 				bind:value={search}
+				on:keydown={(e) => e.key === 'Enter' && applyFilters()}
 				class="mt-1 w-full rounded border px-3 py-2"
 			/>
 		</div>
 
-		<!-- Botón de aplicar -->
-		<button
-			on:click={applyFilters}
-			class="rounded bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-		>
-			Aplicar
-		</button>
+		<div class="flex gap-2">
+			<button
+				on:click={applyFilters}
+				class="rounded bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+			>
+				Aplicar
+			</button>
+
+			<button
+				on:click={resetFilters}
+				type="button"
+				class="rounded border border-gray-300 px-4 py-2 text-gray-700 transition hover:bg-gray-100"
+			>
+				Limpiar filtros
+			</button>
+		</div>
 	</div>
 </div>

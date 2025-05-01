@@ -30,7 +30,7 @@ def sync_latest_chats():
     try:
         conn = sqlite3.connect(settings.OPENWEBUI_DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT id, chat FROM chat ORDER BY created_at DESC")
+        cursor.execute("SELECT id, title, chat, meta FROM chat ORDER BY created_at DESC")
         chats = cursor.fetchall()
     except Exception as e:
         logging.error(f"Error al leer webui.db: {e}")
@@ -39,37 +39,62 @@ def sync_latest_chats():
     db: Session = SessionLocal()
     imported = 0
 
-    # Recuperar todos los IDs ya almacenados
+    # IDs ya presentes en la base consolidada
     existing_ids = {row[0] for row in db.query(Interaction.id).all()}
 
-    for chat_id, chat_json_raw in chats:
+    for chat_id, chat_title, chat_json_raw, meta_raw in chats:
         try:
             parsed_chat = json.loads(chat_json_raw)
+            meta = json.loads(meta_raw) if meta_raw else {}
+            global_tags = meta.get("tags", [])
+
             messages = parsed_chat.get("history", {}).get("messages", {})
+            message_dict = {msg["id"]: msg for msg in messages.values()}
 
-            for msg_id, msg in messages.items():
+            for msg in messages.values():
+                if msg.get("role") != "assistant":
+                    continue
+
+                msg_id = msg["id"]
                 if msg_id in existing_ids:
-                    continue  # Ya existe, saltamos
+                    continue
 
+                parent_id = msg.get("parentId")
+                parent_msg = messages.get(parent_id) if parent_id else None
+                if not parent_msg or parent_msg.get("role") != "user":
+                    continue
+
+                # Tags combinadas
                 raw_tags = msg.get("annotation", {}).get("tags")
                 if isinstance(raw_tags, list) and len(raw_tags) > 0 and isinstance(raw_tags[0], list):
-                    tags = raw_tags[0]
+                    local_tags = raw_tags[0]
                 else:
-                    tags = raw_tags
+                    local_tags = raw_tags or []
+
+                combined_tags = list(set(global_tags + local_tags))
+
+                rating_val = msg.get("annotation", {}).get("rating")
+                score = None  # score lo definirá el evaluador humano
 
                 interaction = Interaction(
                     id=msg_id,
-                    parent_id=msg.get("parentId"),
-                    role=msg.get("role"),
-                    content=msg.get("content"),
+                    parent_id=parent_id,
+                    prompt=parent_msg.get("content", ""),
+                    response=msg.get("content", ""),
                     model=msg.get("model"),
                     timestamp=parse_timestamp(msg.get("timestamp")),
-                    rating=msg.get("annotation", {}).get("rating"),
-                    tags=tags,
-                    feedback_id=msg.get("feedbackId")
+                    rating=rating_val,
+                    score=score,
+                    tags=combined_tags,
+                    notes=None,
+                    chat_title=chat_title,
+                    feedback_id=msg.get("feedbackId"),
+                    usage=msg.get("usage"),
+                    chat_id=chat_id
                 )
                 db.add(interaction)
                 imported += 1
+
         except Exception as e:
             logging.warning(f"Chat {chat_id} falló: {e}")
             continue

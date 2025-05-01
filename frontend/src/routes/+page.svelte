@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getInteractions, getStats } from '$lib/api/interactions';
+	import { getInteractions, getStats } from '$lib/api/api_frontend';
 	import Filters from '$lib/components/Filters.svelte';
 	import InteractionList from '$lib/components/InteractionList.svelte';
 	import type { Interaction } from '$lib/types';
-	import { PUBLIC_BACKEND_URL } from '$lib/config';
+	import type { InteractionFilters } from '$lib/api/api_frontend';
 
 	let interactions: Interaction[] = [];
 	let loading = true;
@@ -15,8 +15,9 @@
 
 	let currentFilters = {
 		rating: null as number | null,
+		score: null as string | number | null,
 		model: null as string | null,
-		tags: null as string | null,
+		tag: null as string | null,
 		dateFrom: '',
 		dateTo: '',
 		search: ''
@@ -40,54 +41,81 @@
 			availableModels = Object.keys(stats.models_usage);
 			availableTags = Object.keys(stats.tags_usage);
 		} catch (err) {
-			console.error('Error al cargar estadísticas');
+			error = 'Error al cargar estadísticas.';
 		}
 	}
 
 	async function loadInteractions() {
-		console.log('🌀 Ejecutando loadInteractions()');
 		loading = true;
 		error = null;
 
-		const filtrosAplicados = {
+		const filtrosAplicados: InteractionFilters = {
 			limit,
-			offset,
-			...(currentFilters.rating !== null && { rating: currentFilters.rating }),
-			...(currentFilters.model && { model: currentFilters.model }),
-			...(currentFilters.tags && { tags: currentFilters.tags }),
-			...(currentFilters.dateFrom && { date_from: currentFilters.dateFrom }),
-			...(currentFilters.dateTo && { date_to: currentFilters.dateTo }),
-			...(currentFilters.search && { search: currentFilters.search })
+			offset
 		};
 
-		console.log('🔍 Filtros aplicados:', filtrosAplicados);
+		if (typeof currentFilters.rating === 'number' && !isNaN(currentFilters.rating)) {
+			filtrosAplicados.rating = currentFilters.rating;
+		}
+
+		if (currentFilters.score === 'null') {
+			filtrosAplicados.score = 'null';
+		} else if (typeof currentFilters.score === 'number' && !isNaN(currentFilters.score)) {
+			filtrosAplicados.score = currentFilters.score;
+		}
+
+		if (currentFilters.model) {
+			filtrosAplicados.model = currentFilters.model;
+		}
+
+		if (currentFilters.tag) {
+			filtrosAplicados.tag = currentFilters.tag;
+		}
+
+		if (currentFilters.dateFrom) {
+			filtrosAplicados.date_from = currentFilters.dateFrom;
+		}
+
+		if (currentFilters.dateTo) {
+			filtrosAplicados.date_to = currentFilters.dateTo;
+		}
+
+		if (currentFilters.search) {
+			filtrosAplicados.search = currentFilters.search;
+		}
 
 		try {
 			const response = await getInteractions(filtrosAplicados);
-			console.log('✅ Interacciones recibidas:', response);
-
 			interactions = response;
 		} catch (err) {
 			error = 'No se pudieron cargar las interacciones.';
-			console.error('❌ Error en getInteractions:', err);
 		} finally {
 			loading = false;
 		}
 	}
 
 	onMount(async () => {
-		console.log('🚀 onMount ejecutado');
 		await loadStats();
 		await loadInteractions();
 	});
 
 	function handleFilterChange(event: CustomEvent) {
-		currentFilters = event.detail;
+		const filters = event.detail;
+
+		currentFilters = {
+			...filters,
+			score:
+				filters.score === 'null'
+					? 'null'
+					: typeof filters.score === 'string'
+						? parseInt(filters.score)
+						: filters.score
+		};
+
 		offset = 0;
 		currentPage = 1;
 		loadInteractions();
 	}
-	console.log('✅ PUBLIC_BACKEND_URL (desde config):', PUBLIC_BACKEND_URL);
 </script>
 
 <main class="mx-auto max-w-4xl px-4 py-6">

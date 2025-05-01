@@ -1,14 +1,7 @@
-// /routes/interaction/[id]/+page.ts
-import { getInteractionById } from '$lib/api/interactions';
-import type { Load } from '@sveltejs/kit';
+import type { PageLoad } from './$types';
+import { getInteractionById } from '$lib/api/api_frontend';
 
-export const load: Load = async ({ params }) => {
-    if (!params.id) {
-        throw new Error('ID no proporcionado');
-    }
-
-    const id = parseInt(params.id);
-    const interaction = await getInteractionById(id);
-
+export const load: PageLoad = async ({ params }) => {
+    const interaction = await getInteractionById(params.id);
     return { interaction };
 };

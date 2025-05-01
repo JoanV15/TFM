@@ -15,19 +15,23 @@
 	<button
 		type="button"
 		on:click={toggleDetails}
-		class="flex w-full items-center justify-between text-left focus:ring-2 focus:ring-blue-400 focus:outline-none"
+		class="flex w-full items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-blue-400"
 	>
-		<div>
-			<p class="text-sm font-semibold text-gray-800">
-				{interaction.role === 'user' ? '🧑 Usuario' : '🤖 Asistente'}
+		<div class="w-full">
+			<p class="mb-1 text-sm font-semibold text-gray-800">
+				🧾 {interaction.prompt.slice(0, 80)}{interaction.prompt.length > 80 ? '...' : ''}
 			</p>
-			<p class="truncate text-base text-gray-700">{interaction.content}</p>
+			<p class="text-sm italic text-gray-600">
+				{interaction.response.slice(0, 100)}{interaction.response.length > 100 ? '...' : ''}
+			</p>
 		</div>
 
-		{#if interaction.rating !== undefined}
-			<span class="ml-4 rounded bg-blue-100 px-2 py-1 text-sm text-blue-700">
-				⭐ {interaction.rating}
-			</span>
+		{#if interaction.rating === 1}
+			<span class="ml-4 rounded bg-green-100 px-2 py-1 text-sm text-green-700">👍</span>
+		{:else if interaction.rating === -1}
+			<span class="ml-4 rounded bg-red-100 px-2 py-1 text-sm text-red-700">👎</span>
+		{:else}
+			<span class="ml-4 rounded bg-blue-100 px-2 py-1 text-sm text-blue-700">–</span>
 		{/if}
 	</button>
 
@@ -40,10 +44,17 @@
 		<InteractionMeta {interaction} />
 	{/if}
 
-	<button
-		on:click={() => goto(`/interaction/${interaction.id}`)}
-		class="mt-4 text-sm text-blue-600 hover:underline"
-	>
-		Ver detalle →
-	</button>
+	<div class="mt-4 flex items-center justify-between text-sm">
+		<span class="text-gray-500">
+			Score: {interaction.score !== null && interaction.score !== undefined
+				? interaction.score
+				: '–'}
+		</span>
+		<button
+			on:click={() => goto(`/interaction/${interaction.id}`)}
+			class="text-blue-600 hover:underline"
+		>
+			Ver detalle →
+		</button>
+	</div>
 </div>

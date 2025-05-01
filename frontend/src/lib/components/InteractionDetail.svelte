@@ -1,55 +1,150 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
+	import { getInteractionById, postEvaluation } from '$lib/api/api_frontend';
 	import type { Interaction } from '$lib/types';
+	import { goto } from '$app/navigation';
 
 	export let interaction: Interaction;
+	let loading = true;
+	let error: string | null = null;
+
+	let score: string = '';
+	let rating: string = '';
+	let notes: string = '';
+	let tags: string = '';
+
+	const id = $page.params.id;
+
+	onMount(async () => {
+		try {
+			interaction = await getInteractionById(id);
+			score =
+				interaction.score !== null && interaction.score !== undefined
+					? String(interaction.score)
+					: '';
+			rating =
+				interaction.rating !== undefined && interaction.rating !== null
+					? String(interaction.rating)
+					: '';
+			notes = interaction.notes ?? '';
+			tags = interaction.tags?.join(', ') ?? '';
+		} catch (err) {
+			error = 'Error al cargar la interacción.';
+		} finally {
+			loading = false;
+		}
+	});
+
+	async function guardarEvaluacion() {
+		try {
+			await postEvaluation(id, {
+				score:
+					score !== '' && !isNaN(Number(score)) && Number(score) >= 0 && Number(score) <= 10
+						? Number(score)
+						: undefined,
+				rating: rating !== '' ? parseInt(rating) : undefined,
+				notes,
+				tags: tags
+					.split(',')
+					.map((t) => t.trim())
+					.filter(Boolean)
+			});
+			goto('/');
+		} catch {
+			error = 'Error al guardar la evaluación.';
+		}
+	}
 </script>
 
-<div class="space-y-6 rounded-xl bg-white p-6 text-sm text-gray-800 shadow">
-	<!-- Rol y contenido -->
-	<div>
-		<h2 class="text-lg font-semibold">🧑‍💻 Interacción</h2>
-		<p class="mt-1">
-			<span class="font-semibold text-gray-600">Rol:</span>
-			{interaction.role === 'user' ? 'Usuario' : 'Asistente'}
-		</p>
-		<p class="mt-2 whitespace-pre-wrap text-gray-700">{interaction.content}</p>
-	</div>
-
-	<!-- Metadatos -->
-	<div class="grid grid-cols-1 gap-4 text-gray-600 sm:grid-cols-2">
-		<p><strong>🧠 Modelo:</strong> {interaction.model ?? '--'}</p>
-		<p><strong>🗓 Fecha:</strong> {new Date(interaction.timestamp).toLocaleString()}</p>
-
-		{#if interaction.rating !== undefined}
-			<p><strong>📊 Evaluación:</strong> {interaction.rating}/10</p>
-		{/if}
-
-		{#if interaction.score !== undefined}
-			<p><strong>⭐ Score manual:</strong> {interaction.score}/10</p>
-		{/if}
-
-		{#if interaction.rag_score !== undefined}
-			<p><strong>📈 RAG Score:</strong> {interaction.rag_score.toFixed(2)}</p>
-		{/if}
-	</div>
-
-	<!-- Etiquetas -->
-	{#if interaction.tags && interaction.tags.length > 0}
+{#if loading}
+	<p class="text-gray-500">Cargando interacción...</p>
+{:else if error}
+	<p class="text-red-600">{error}</p>
+{:else}
+	<div class="space-y-6 rounded-xl bg-white p-6 text-sm text-gray-800 shadow">
+		<!-- Prompt -->
 		<div>
-			<h2 class="text-sm font-semibold text-gray-700">🏷️ Etiquetas asignadas</h2>
-			<div class="mt-1 flex flex-wrap gap-2">
-				{#each interaction.tags as tag}
-					<span class="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">{tag}</span>
-				{/each}
+			<h2 class="text-lg font-semibold">🧑‍💻 Prompt</h2>
+			<p class="mt-1 whitespace-pre-wrap text-gray-700">{interaction.prompt}</p>
+		</div>
+
+		<!-- Respuesta -->
+		<div>
+			<h2 class="text-lg font-semibold">🤖 Respuesta del modelo</h2>
+			<p class="mt-1 whitespace-pre-wrap text-gray-700">{interaction.response}</p>
+		</div>
+
+		<!-- Metadatos -->
+		<div class="grid grid-cols-1 gap-4 text-gray-600 sm:grid-cols-2">
+			<p><strong>🧠 Modelo:</strong> {interaction.model ?? '--'}</p>
+			<p><strong>🗓 Fecha:</strong> {new Date(interaction.timestamp).toLocaleString()}</p>
+
+			{#if interaction.usage}
+				<p>
+					<strong>📦 Tokens usados:</strong>
+					{interaction.usage.total_tokens ?? '--'} (Prompt: {interaction.usage.prompt_tokens ??
+						'--'}, Completion: {interaction.usage.completion_tokens ?? '--'})
+				</p>
+			{/if}
+		</div>
+
+		<!-- Evaluación editable -->
+		<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+			<div>
+				<label for="score" class="block text-sm font-medium text-gray-700">⭐ Score (0–10)</label>
+				<input
+					id="score"
+					type="number"
+					min="0"
+					max="10"
+					bind:value={score}
+					class="mt-1 w-full rounded border px-3 py-2"
+				/>
+				{#if score !== '' && (isNaN(Number(score)) || Number(score) < 0 || Number(score) > 10)}
+					<p class="mt-1 text-xs text-red-600">⚠️ Score debe estar entre 0 y 10.</p>
+				{/if}
+			</div>
+
+			<div>
+				<label for="rating" class="block text-sm font-medium text-gray-700">👍 Evaluación</label>
+				<select id="rating" bind:value={rating} class="mt-1 w-full rounded border px-3 py-2">
+					<option value="1">👍 Aprobado</option>
+					<option value="0">– Neutral</option>
+					<option value="-1">👎 Rechazado</option>
+				</select>
+			</div>
+
+			<div>
+				<label for="tags" class="block text-sm font-medium text-gray-700">🏷️ Tags (coma)</label>
+				<input
+					id="tags"
+					type="text"
+					bind:value={tags}
+					placeholder="ej: macroeconomía, confuso"
+					class="mt-1 w-full rounded border px-3 py-2"
+				/>
 			</div>
 		</div>
-	{/if}
 
-	<!-- Notas -->
-	{#if interaction.notes}
+		<!-- Notas -->
 		<div>
-			<h2 class="text-sm font-semibold text-gray-700">🗒️ Observaciones del evaluador</h2>
-			<p class="mt-1 whitespace-pre-wrap text-gray-700">{interaction.notes}</p>
+			<label for="notes" class="block text-sm font-medium text-gray-700"
+				>🗒️ Notas del evaluador</label
+			>
+			<textarea id="notes" bind:value={notes} rows="4" class="mt-1 w-full rounded border px-3 py-2"
+			></textarea>
 		</div>
-	{/if}
-</div>
+
+		<!-- Botón guardar -->
+		<div class="pt-2">
+			<button
+				on:click={guardarEvaluacion}
+				class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+				disabled={score !== '' && (isNaN(Number(score)) || Number(score) < 0 || Number(score) > 10)}
+			>
+				Guardar evaluación
+			</button>
+		</div>
+	</div>
+{/if}

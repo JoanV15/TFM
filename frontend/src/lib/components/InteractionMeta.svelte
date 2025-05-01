@@ -10,8 +10,31 @@
 	</div>
 
 	<div>
-		<strong>📈 RAG Score:</strong>
-		<span>{interaction.rag_score !== undefined ? interaction.rag_score.toFixed(2) : '--'}</span>
+		<strong>👍 Evaluación:</strong>
+		{#if interaction.rating === 1}
+			<span class="text-green-700">👍</span>
+		{:else if interaction.rating === -1}
+			<span class="text-red-700">👎</span>
+		{:else}
+			<span class="text-blue-700">–</span>
+		{/if}
+	</div>
+
+	<div>
+		<strong>🧠 Modelo:</strong>
+		<span>{interaction.model ?? '--'}</span>
+	</div>
+
+	<div>
+		<strong>📦 Tokens / Uso:</strong>
+		{#if interaction.usage}
+			<p class="mt-1 text-xs text-gray-500">
+				Prompt: {interaction.usage.prompt_tokens ?? '--'} | Respuesta: {interaction.usage
+					.completion_tokens ?? '--'} | Total: {interaction.usage.total_tokens ?? '--'}
+			</p>
+		{:else}
+			<span class="text-gray-500">--</span>
+		{/if}
 	</div>
 
 	<div>
@@ -29,7 +52,7 @@
 
 	<div>
 		<strong>🗒️ Notas:</strong>
-		<p class="mt-1 text-sm whitespace-pre-wrap text-gray-600">
+		<p class="mt-1 whitespace-pre-wrap text-sm text-gray-600">
 			{interaction.notes ?? '--'}
 		</p>
 	</div>
