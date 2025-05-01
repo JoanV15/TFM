@@ -3,9 +3,16 @@
 	export let interaction: Interaction;
 </script>
 
-<div class="mt-3 space-y-2 rounded-xl border bg-gray-50 p-4 text-sm text-gray-700">
-	<div><strong>⭐ Score:</strong> {interaction.score ?? '--'}</div>
-	<div><strong>📈 RAG Score:</strong> {interaction.rag_score?.toFixed(2) ?? '--'}</div>
+<div class="mt-3 space-y-3 rounded-xl border bg-gray-50 p-4 text-sm text-gray-700">
+	<div>
+		<strong>⭐ Score:</strong>
+		<span>{interaction.score ?? '--'}</span>
+	</div>
+
+	<div>
+		<strong>📈 RAG Score:</strong>
+		<span>{interaction.rag_score !== undefined ? interaction.rag_score.toFixed(2) : '--'}</span>
+	</div>
 
 	<div>
 		<strong>🏷️ Tags:</strong>
@@ -22,6 +29,8 @@
 
 	<div>
 		<strong>🗒️ Notas:</strong>
-		<p class="mt-1 text-sm text-gray-600">{interaction.notes ?? '--'}</p>
+		<p class="mt-1 text-sm whitespace-pre-wrap text-gray-600">
+			{interaction.notes ?? '--'}
+		</p>
 	</div>
 </div>

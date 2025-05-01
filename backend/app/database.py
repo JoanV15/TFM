@@ -1,15 +1,12 @@
 # app/database.py
-
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
-# Conexión a base de datos local SQLite (webui.db debe estar en la raíz del proyecto)
-SQLALCHEMY_DATABASE_URL = "sqlite:///./webui.db"
+from sqlalchemy.orm import sessionmaker, declarative_base
+from .config import settings
 
 # Necesario para evitar errores en SQLite cuando múltiples hilos acceden a la base
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    settings.SQLALCHEMY_DATABASE_URL,  # <-- Uso de settings
+    connect_args={"check_same_thread": False}
 )
 
 # Crea una clase "Session" para comunicarnos con la base de datos

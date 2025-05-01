@@ -1,16 +1,21 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
-from .database import Base
-from datetime import datetime
+from sqlalchemy import Column, String, Text, Integer, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects.sqlite import JSON
+
+Base = declarative_base()
 
 class Interaction(Base):
     __tablename__ = "interactions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    prompt = Column(Text)
-    response = Column(Text)
-    thumbs = Column(String)  # "up", "down", "none"
-    created_at = Column(DateTime, default=datetime.utcnow)
-    lamb_metadata = Column(Text)  # JSON serializado
-    eval_score = Column(Integer, nullable=True)
-    eval_tags = Column(Text, nullable=True)
-    eval_notes = Column(Text, nullable=True)
+    id = Column(String, primary_key=True, index=True)  # UUID del mensaje
+    parent_id = Column(String, nullable=True)  # ID del padre (si existe)
+    role = Column(String, nullable=False)  # 'user' o 'assistant'
+    content = Column(Text, nullable=False)  # Texto del prompt o respuesta
+    model = Column(String, nullable=True)  # Nombre del modelo usado
+    timestamp = Column(DateTime, nullable=True)  # Timestamp UNIX
+    rating = Column(Integer, nullable=True)  # Rating manual (-1, 0, 1)
+    tags = Column(JSON, nullable=True)  # Lista de etiquetas
+    feedback_id = Column(String, nullable=True)  # ID de feedback si existe
+
+    def __repr__(self):
+        return f"<Interaction id={self.id} role={self.role} model={self.model}>"

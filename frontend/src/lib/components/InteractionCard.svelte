@@ -11,22 +11,30 @@
 	}
 </script>
 
-<div class="rounded-2xl border p-4 shadow transition hover:shadow-md">
+<div class="rounded-2xl border bg-white p-4 shadow transition hover:shadow-md">
 	<button
 		type="button"
 		on:click={toggleDetails}
-		class="flex w-full items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-blue-400"
+		class="flex w-full items-center justify-between text-left focus:ring-2 focus:ring-blue-400 focus:outline-none"
 	>
-		<h2 class="text-base font-medium text-gray-800">{interaction.prompt}</h2>
-		<span
-			class={`rounded px-2 py-1 text-sm ${interaction.thumbs === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-		>
-			{interaction.thumbs === 'up' ? '👍 Positiva' : '👎 Negativa'}
-		</span>
+		<div>
+			<p class="text-sm font-semibold text-gray-800">
+				{interaction.role === 'user' ? '🧑 Usuario' : '🤖 Asistente'}
+			</p>
+			<p class="truncate text-base text-gray-700">{interaction.content}</p>
+		</div>
+
+		{#if interaction.rating !== undefined}
+			<span class="ml-4 rounded bg-blue-100 px-2 py-1 text-sm text-blue-700">
+				⭐ {interaction.rating}
+			</span>
+		{/if}
 	</button>
 
-	<p class="mt-2 truncate text-sm text-gray-600">{interaction.response}</p>
-	<p class="mt-1 text-xs text-gray-400">📅 {interaction.timestamp}</p>
+	{#if interaction.model}
+		<p class="mt-1 text-xs text-gray-400">🧠 Modelo: {interaction.model}</p>
+	{/if}
+	<p class="text-xs text-gray-400">📅 {new Date(interaction.timestamp).toLocaleString()}</p>
 
 	{#if isOpen}
 		<InteractionMeta {interaction} />
