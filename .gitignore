@@ -51,3 +51,4 @@ pnpm-debug.log*
 # 🚫 Archivos duplicados o no usados
 # =============================
 open-webui/  # Parece estar ignorado 2 veces, solo se necesita una línea
+/openwebui-db-inspect/
