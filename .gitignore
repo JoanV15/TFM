@@ -52,3 +52,4 @@ pnpm-debug.log*
 # =============================
 open-webui/  # Parece estar ignorado 2 veces, solo se necesita una línea
 /openwebui-db-inspect/
+/opik

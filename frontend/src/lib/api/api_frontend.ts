@@ -63,6 +63,21 @@ export async function postEvaluation(id: string, data: {
     }
 }
 
+export type ExportResult = {
+    evaluated_ids: string[];
+    skipped_count: number;
+    file: string;
+};
+
+export async function exportInteractions(): Promise<ExportResult> {
+    const res = await fetch(`${PUBLIC_BACKEND_URL}/export_interactions?ts=${Date.now()}`);
+    if (!res.ok) {
+        throw new Error('Error al exportar interacciones');
+    }
+    return await res.json();
+}
+
+
 export type StatsResponse = {
     total_interactions: number;
     rated_positive: number;

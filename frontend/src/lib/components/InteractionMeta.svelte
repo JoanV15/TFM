@@ -5,28 +5,22 @@
 
 <div class="mt-3 space-y-3 rounded-xl border bg-gray-50 p-4 text-sm text-gray-700">
 	<div>
-		<strong>⭐ Score:</strong>
-		<span>{interaction.score ?? '--'}</span>
+		<strong> ID:</strong>
+		<span>{interaction.id ?? '--'}</span>
 	</div>
 
 	<div>
-		<strong>👍 Evaluación:</strong>
-		{#if interaction.rating === 1}
-			<span class="text-green-700">👍</span>
-		{:else if interaction.rating === -1}
-			<span class="text-red-700">👎</span>
-		{:else}
-			<span class="text-blue-700">–</span>
-		{/if}
-	</div>
-
-	<div>
-		<strong>🧠 Modelo:</strong>
+		<strong> Modelo:</strong>
 		<span>{interaction.model ?? '--'}</span>
 	</div>
 
 	<div>
-		<strong>📦 Tokens / Uso:</strong>
+		<strong> Score:</strong>
+		<span>{interaction.score ?? '--'}</span>
+	</div>
+
+	<div>
+		<strong> Tokens / Uso:</strong>
 		{#if interaction.usage}
 			<p class="mt-1 text-xs text-gray-500">
 				Prompt: {interaction.usage.prompt_tokens ?? '--'} | Respuesta: {interaction.usage
@@ -38,7 +32,7 @@
 	</div>
 
 	<div>
-		<strong>🏷️ Tags:</strong>
+		<strong> Tags:</strong>
 		{#if interaction.tags && interaction.tags.length > 0}
 			<div class="mt-1 flex flex-wrap gap-2">
 				{#each interaction.tags as tag}
@@ -51,7 +45,7 @@
 	</div>
 
 	<div>
-		<strong>🗒️ Notas:</strong>
+		<strong> Notas:</strong>
 		<p class="mt-1 whitespace-pre-wrap text-sm text-gray-600">
 			{interaction.notes ?? '--'}
 		</p>

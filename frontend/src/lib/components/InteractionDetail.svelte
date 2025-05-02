@@ -3,7 +3,9 @@
 	import { page } from '$app/stores';
 	import { getInteractionById, postEvaluation } from '$lib/api/api_frontend';
 	import type { Interaction } from '$lib/types';
-	import { goto } from '$app/navigation';
+	import { createEventDispatcher } from 'svelte';
+
+	const dispatch = createEventDispatcher();
 
 	export let interaction: Interaction;
 	let loading = true;
@@ -50,7 +52,7 @@
 					.map((t) => t.trim())
 					.filter(Boolean)
 			});
-			goto('/');
+			dispatch('evaluacionGuardada'); // Notifica al componente padre
 		} catch {
 			error = 'Error al guardar la evaluación.';
 		}
@@ -65,7 +67,7 @@
 	<div class="space-y-6 rounded-xl bg-white p-6 text-sm text-gray-800 shadow">
 		<!-- Prompt -->
 		<div>
-			<h2 class="text-lg font-semibold">🧑‍💻 Prompt</h2>
+			<h2 class="text-lg font-semibold">🧑 Prompt</h2>
 			<p class="mt-1 whitespace-pre-wrap text-gray-700">{interaction.prompt}</p>
 		</div>
 

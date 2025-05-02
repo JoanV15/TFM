@@ -7,6 +7,9 @@ from .schemas import InteractionOut, InteractionCreate, EvaluationUpdate
 from .models import Interaction
 from sqlalchemy import func
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+import json
+from datetime import datetime
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -100,3 +103,39 @@ def update_evaluation(interaction_id: str, eval_data: EvaluationUpdate, db: Sess
     if not interaction:
         raise HTTPException(status_code=404, detail="Interaction not found")
     return {"message": "Evaluation updated successfully"}
+
+from fastapi.responses import FileResponse
+import csv
+
+@app.get("/export_interactions", tags=["Exportación"])
+def export_interactions(db: Session = Depends(get_db)):
+    file_path = "interactions_export.json"
+    all_interactions = db.query(models.Interaction).all()
+
+    export_data = []
+    exported_ids = []
+    skipped_count = 0
+
+    for i in all_interactions:
+        if i.score is not None:
+            export_data.append({
+                "input": i.prompt,
+                "expected_output": i.response,
+                "score": i.score,
+                "rating": i.rating,
+                "model": i.model,
+                "timestamp": i.timestamp.isoformat() if isinstance(i.timestamp, datetime) else "",
+                "tags": i.tags if isinstance(i.tags, list) else []
+            })
+            exported_ids.append(i.id)
+        else:
+            skipped_count += 1
+
+    with open(file_path, "w", encoding="utf-8") as jsonfile:
+        json.dump(export_data, jsonfile, ensure_ascii=False, indent=2)
+
+    return {
+        "file": file_path,
+        "evaluated_ids": exported_ids,
+        "skipped_count": skipped_count
+    }
