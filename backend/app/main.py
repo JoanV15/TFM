@@ -161,21 +161,21 @@ def evaluate_with_opik(interaction_id: str, db: Session = Depends(get_db)):
         interaction.hallucination = Hallucination(model=model).score(input=prompt, output=response).value  # type: ignore
         interaction.moderation = Moderation(model=model).score(input=prompt, output=response).value  # type: ignore
 
-        interaction.context_precision = ContextPrecision(model=model).score(
+        interaction.context_precision = ContextPrecision(model=model).score( # type: ignore
             input=prompt, output=response, expected_output=expected, context=context
         ).value  # type: ignore
 
-        interaction.context_recall = ContextRecall(model=model).score(
+        interaction.context_recall = ContextRecall(model=model).score( # type: ignore
             input=prompt, output=response, expected_output=expected, context=context
         ).value  # type: ignore
 
         interaction.usefulness = Usefulness(model=model).score(input=prompt, output=response).value  # type: ignore
 
-        interaction.answer_relevance = AnswerRelevance(model=model, require_context=False).score(
+        interaction.answer_relevance = AnswerRelevance(model=model, require_context=False).score( # type: ignore
             input=prompt, output=response
         ).value  # type: ignore
 
-        interaction.g_eval = GEval(
+        interaction.g_eval = GEval( # type: ignore
             task_introduction="Evalúa la calidad de la respuesta en base a su claridad y validez.",
             evaluation_criteria="La respuesta está bien explicada y es correcta.",
             model=model
