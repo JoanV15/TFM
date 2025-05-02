@@ -5,6 +5,7 @@
 	import InteractionList from '$lib/components/InteractionList.svelte';
 	import type { Interaction } from '$lib/types';
 	import type { InteractionFilters } from '$lib/api/api_frontend';
+	import { syncWebuiDB } from '$lib/api/api_frontend';
 
 	let interactions: Interaction[] = [];
 	let loading = true;
@@ -116,6 +117,14 @@
 		currentPage = 1;
 		loadInteractions();
 	}
+	async function sincronizarWebUI() {
+		try {
+			await syncWebuiDB();
+			location.reload();
+		} catch (err) {
+			alert('Error al sincronizar con webui.db');
+		}
+	}
 </script>
 
 <main class="mx-auto max-w-4xl px-4 py-6">
@@ -128,6 +137,9 @@
 	{:else if error}
 		<p class="text-red-600">{error}</p>
 	{:else if interactions.length === 0}
+		<button on:click={sincronizarWebUI} class="ml-4 text-sm text-blue-600 hover:underline">
+			🔄 Actualizar interacciones
+		</button>
 		<p class="text-gray-500">No hay interacciones registradas.</p>
 	{:else}
 		<div>

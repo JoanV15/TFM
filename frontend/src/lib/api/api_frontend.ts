@@ -77,7 +77,6 @@ export async function exportInteractions(): Promise<ExportResult> {
     return await res.json();
 }
 
-
 export type StatsResponse = {
     total_interactions: number;
     rated_positive: number;
@@ -93,4 +92,50 @@ export async function getStats(): Promise<StatsResponse> {
         throw new Error('Error al obtener estadísticas');
     }
     return await res.json();
+}
+
+export type HeuristicMetricsRequest = {
+    expected_output: string;
+    actual_output: string;
+};
+
+export type HeuristicMetricsResponse = {
+    equals: boolean;
+    contains: boolean;
+    regexmatch: boolean;
+    isjson: boolean;
+    levenshtein: number;
+};
+
+export async function getHeuristicMetrics(data: HeuristicMetricsRequest): Promise<HeuristicMetricsResponse> {
+    const res = await fetch(`${PUBLIC_BACKEND_URL}/metrics/heuristics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    if (!res.ok) {
+        throw new Error('Error al calcular métricas heurísticas');
+    }
+
+    return await res.json();
+}
+
+export async function evaluateWithOpik(id: string): Promise<void> {
+    const res = await fetch(`${PUBLIC_BACKEND_URL}/opik/evaluate/${id}`, {
+        method: 'POST'
+    });
+    if (!res.ok) {
+        throw new Error('Error al evaluar con Opik');
+    }
+}
+
+// 🔄 Sincronización con WebUI
+export async function syncWebuiDB(): Promise<void> {
+    const res = await fetch(`${PUBLIC_BACKEND_URL}/sync_webui_db`, {
+        method: 'POST'
+    });
+    if (!res.ok) {
+        throw new Error('Error al sincronizar con webui.db');
+    }
 }

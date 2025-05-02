@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Depends, Query, HTTPException
+from fastapi import FastAPI, Depends, Query, HTTPException, Body
+import os
+from dotenv import load_dotenv
 from . import models, schemas, crud, lamb_api, sync_utils
 from .database import SessionLocal, engine
 from sqlalchemy.orm import Session
@@ -8,8 +10,23 @@ from .models import Interaction
 from sqlalchemy import func
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-import json
 from datetime import datetime
+import json
+import csv
+
+from opik.evaluation.metrics import (
+    Equals, Contains, RegexMatch, IsJson, LevenshteinRatio,
+    Hallucination, Moderation, ContextPrecision, ContextRecall,
+    Usefulness, AnswerRelevance, GEval
+)
+
+# ======================
+# Configuración básica
+# ======================
+
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -27,10 +44,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/", tags=["Sistema"])
-async def root():
-    return {"message": "FastApi Funcionando!"}
-
 def get_db():
     db = SessionLocal()
     try:
@@ -38,47 +51,28 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/interactions", response_model=List[InteractionOut], tags=["Interacciones"])
-def read_interactions(
-    model: Optional[str] = Query(None),
-    score: Optional[Union[int, str]] = Query(None),
-    rating: Optional[int] = Query(None),
-    tag: Optional[str] = Query(None),
-    limit: int = Query(20),
-    offset: int = Query(0),
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
-):
-    return crud.get_filtered_interactions(
-        db, model=model, rating=rating, score=score, tag=tag,
-        limit=limit, offset=offset,
-        date_from=date_from, date_to=date_to, search=search)
+# ======================
+# Sistema
+# ======================
 
-@app.get("/interactions/{interaction_id}", response_model=InteractionOut, tags=["Interacciones"])
-def get_interaction(interaction_id: str, db: Session = Depends(get_db)):
-    interaction = crud.get_interaction_by_id(db, interaction_id)
-    if not interaction:
-        raise HTTPException(status_code=404, detail="Interacción no encontrada")
-    return interaction
+@app.get("/", tags=["Sistema"])
+async def root():
+    return {"message": "FastApi Funcionando!"}
 
-@app.post("/interactions", response_model=InteractionOut, tags=["Interacciones"])
-def create_interaction(interaction: InteractionCreate, db: Session = Depends(get_db)):
-    return crud.create_interaction(db, interaction)
-
-@app.post("/sync_webui_db", tags=["Sincronización"])
-def sync_webui_db():
-    return sync_utils.sync_latest_chats()
+# ======================
+# Sincronización
+# ======================
 
 @app.get("/stats", tags=["Estadísticas"])
 def get_stats(db: Session = Depends(get_db)) -> Dict[str, Any]:
     total = db.query(func.count(models.Interaction.id)).scalar()
     rated_positive = db.query(func.count(models.Interaction.id)).filter(models.Interaction.rating == 1).scalar()
     rated_negative = db.query(func.count(models.Interaction.id)).filter(models.Interaction.rating == -1).scalar()
-    rated_neutral = db.query(func.count(models.Interaction.id)).filter((models.Interaction.rating == 0) | (models.Interaction.rating == None)).scalar()
+    rated_neutral = db.query(func.count(models.Interaction.id)).filter(
+        (models.Interaction.rating == 0) | (models.Interaction.rating == None)
+    ).scalar()
 
-    results = db.query(Interaction.model, func.count(Interaction.model)).group_by(Interaction.model).all()
+    results = db.query(models.Interaction.model, func.count(models.Interaction.model)).group_by(models.Interaction.model).all()
     model_counts = {model: count for model, count in results}
 
     tags_counter = {}
@@ -97,15 +91,137 @@ def get_stats(db: Session = Depends(get_db)) -> Dict[str, Any]:
         "tags_usage": tags_counter
     }
 
-@app.post("/evaluation/{interaction_id}", tags=["Evaluaciones"])
+@app.post("/sync_webui_db", tags=["Sincronización"])
+def sync_webui_db():
+    return sync_utils.sync_latest_chats()
+
+# ======================
+# Interacciones
+# ======================
+
+@app.get("/interactions", response_model=List[InteractionOut], tags=["Interacciones"])
+def read_interactions(
+    model: Optional[str] = Query(None),
+    score: Optional[Union[int, str]] = Query(None),
+    rating: Optional[int] = Query(None),
+    tag: Optional[str] = Query(None),
+    limit: int = Query(20),
+    offset: int = Query(0),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    return crud.get_filtered_interactions(
+        db, model=model, rating=rating, score=score, tag=tag,
+        limit=limit, offset=offset,
+        date_from=date_from, date_to=date_to, search=search
+    )
+
+@app.get("/interactions/{interaction_id}", response_model=InteractionOut, tags=["Interacciones"])
+def get_interaction(interaction_id: str, db: Session = Depends(get_db)):
+    interaction = crud.get_interaction_by_id(db, interaction_id)
+    if not interaction:
+        raise HTTPException(status_code=404, detail="Interacción no encontrada")
+    return interaction
+
+@app.post("/interactions", response_model=InteractionOut, tags=["Interacciones"])
+def create_interaction(interaction: InteractionCreate, db: Session = Depends(get_db)):
+    return crud.create_interaction(db, interaction)
+
+# ======================
+# Evaluación manual
+# ======================
+
+@app.post("/evaluation/{interaction_id}", tags=["Evaluación manual"])
 def update_evaluation(interaction_id: str, eval_data: EvaluationUpdate, db: Session = Depends(get_db)):
     interaction = crud.update_evaluation(db, interaction_id, eval_data)
     if not interaction:
         raise HTTPException(status_code=404, detail="Interaction not found")
     return {"message": "Evaluation updated successfully"}
 
-from fastapi.responses import FileResponse
-import csv
+# ======================
+# Evaluación automática
+# ======================
+
+@app.post("/opik/evaluate/{interaction_id}", tags=["Evaluación automática"])
+def evaluate_with_opik(interaction_id: str, db: Session = Depends(get_db)):
+    interaction = crud.get_interaction_by_id(db, interaction_id)
+    if not interaction:
+        raise HTTPException(status_code=404, detail="Interacción no encontrada")
+
+    prompt: str = interaction.prompt  # type: ignore
+    response: str = interaction.response  # type: ignore
+    expected: str = interaction.response  # type: ignore
+    context = [""]
+
+    try:
+        model = OPENAI_MODEL
+
+        interaction.hallucination = Hallucination(model=model).score(input=prompt, output=response).value  # type: ignore
+        interaction.moderation = Moderation(model=model).score(input=prompt, output=response).value  # type: ignore
+
+        interaction.context_precision = ContextPrecision(model=model).score(
+            input=prompt, output=response, expected_output=expected, context=context
+        ).value  # type: ignore
+
+        interaction.context_recall = ContextRecall(model=model).score(
+            input=prompt, output=response, expected_output=expected, context=context
+        ).value  # type: ignore
+
+        interaction.usefulness = Usefulness(model=model).score(input=prompt, output=response).value  # type: ignore
+
+        interaction.answer_relevance = AnswerRelevance(model=model, require_context=False).score(
+            input=prompt, output=response
+        ).value  # type: ignore
+
+        interaction.g_eval = GEval(
+            task_introduction="Evalúa la calidad de la respuesta en base a su claridad y validez.",
+            evaluation_criteria="La respuesta está bien explicada y es correcta.",
+            model=model
+        ).score(input=prompt, output=response).value  # type: ignore
+
+        db.commit()
+
+        return {
+            "message": "Métricas evaluadas y guardadas con éxito",
+            "metrics": {
+                "hallucination": interaction.hallucination,
+                "moderation": interaction.moderation,
+                "context_precision": interaction.context_precision,
+                "context_recall": interaction.context_recall,
+                "usefulness": interaction.usefulness,
+                "answer_relevance": interaction.answer_relevance,
+                "g_eval": interaction.g_eval
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al evaluar métricas automáticas: {str(e)}")
+
+# ======================
+# Métricas heurísticas
+# ======================
+
+@app.post("/metrics/heuristics", tags=["Métricas heurísticas"])
+def compute_heuristic_metrics(
+    expected_output: str = Body(...),
+    actual_output: str = Body(...)
+):
+    try:
+        return {
+            "equals": Equals().score(expected_output, actual_output).value,
+            "contains": Contains().score(expected_output, actual_output),
+            "regexmatch": RegexMatch(regex=expected_output).score(actual_output),
+            "isjson": IsJson().score(actual_output).value,
+            "levenshtein": LevenshteinRatio().score(expected_output, actual_output).value
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al calcular métricas heurísticas: {str(e)}")
+
+# ======================
+# Exportación
+# ======================
 
 @app.get("/export_interactions", tags=["Exportación"])
 def export_interactions(db: Session = Depends(get_db)):
@@ -125,7 +241,15 @@ def export_interactions(db: Session = Depends(get_db)):
                 "rating": i.rating,
                 "model": i.model,
                 "timestamp": i.timestamp.isoformat() if isinstance(i.timestamp, datetime) else "",
-                "tags": i.tags if isinstance(i.tags, list) else []
+                "tags": i.tags if isinstance(i.tags, list) else [],
+                # Nuevas métricas automáticas de Opik
+                "hallucination": i.hallucination,
+                "moderation": i.moderation,
+                "context_precision": i.context_precision,
+                "context_recall": i.context_recall,
+                "usefulness": i.usefulness,
+                "answer_relevance": i.answer_relevance,
+                "g_eval": i.g_eval
             })
             exported_ids.append(i.id)
         else:

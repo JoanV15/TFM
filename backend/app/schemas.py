@@ -18,6 +18,15 @@ class InteractionBase(BaseModel):
     usage: Optional[Dict] = None
     chat_id: Optional[str] = None
 
+    # 🔍 Métricas automáticas Opik (LLM-as-a-Judge)
+    hallucination: Optional[float] = None
+    moderation: Optional[float] = None
+    context_precision: Optional[float] = None
+    context_recall: Optional[float] = None
+    usefulness: Optional[float] = None
+    answer_relevance: Optional[float] = None
+    g_eval: Optional[float] = None
+
     model_config = {
         "from_attributes": True
     }
@@ -45,3 +54,15 @@ class EvaluationUpdate(BaseModel):
 
 class InteractionOut(InteractionBase):
     pass
+
+# Esquemas para métricas heurísticas
+class HeuristicMetricsRequest(BaseModel):
+    expected_output: str
+    actual_output: str
+
+class HeuristicMetricsResponse(BaseModel):
+    equals: bool
+    contains: bool
+    regexmatch: bool
+    isjson: bool
+    levenshtein: float

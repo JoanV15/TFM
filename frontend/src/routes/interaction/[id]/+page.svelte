@@ -7,6 +7,8 @@
 		interaction: Interaction;
 	};
 
+	let interaction = data.interaction;
+
 	function volverAlListado() {
 		goto('/');
 	}
@@ -18,8 +20,18 @@
 	</h1>
 
 	<InteractionDetail interaction={data.interaction} on:evaluacionGuardada={volverAlListado} />
+	<div class="mt-8 flex justify-between">
+		<!-- Botón izquierdo: volver -->
+		<button on:click={volverAlListado} class="text-sm text-blue-600 hover:underline">
+			← Volver al listado
+		</button>
 
-	<button on:click={volverAlListado} class="mt-8 text-sm text-blue-600 hover:underline">
-		← Volver al listado
-	</button>
+		<!-- Botón derecho: ir a métricas -->
+		<button
+			on:click={() => goto(`/metrics/${data.interaction.id}`)}
+			class="text-sm text-blue-600 hover:underline"
+		>
+			📊 Ver métricas de evaluación
+		</button>
+	</div>
 </section>

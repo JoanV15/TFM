@@ -16,4 +16,12 @@ export type Interaction = {
     feedback_id?: string | null;
     usage?: Record<string, any>;
     chat_id?: string;
+
+    hallucination?: number;
+    moderation?: number;
+    context_precision?: number;
+    context_recall?: number;
+    usefulness?: number;
+    answer_relevance?: number;
+    g_eval?: number;
 };

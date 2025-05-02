@@ -54,7 +54,13 @@
 			on:click={() => goto(`/interaction/${interaction.id}`)}
 			class="text-blue-600 hover:underline"
 		>
-			Ver detalle →
+			Ver detalles →
+		</button>
+		<button
+			on:click={() => goto(`/metrics/${interaction.id}`)}
+			class="text-sm text-blue-600 hover:underline"
+		>
+			🔍 Ver métricas
 		</button>
 	</div>
 </div>

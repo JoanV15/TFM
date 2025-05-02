@@ -2,7 +2,7 @@
 	import InteractionCard from '$lib/components/InteractionCard.svelte';
 	import type { Interaction } from '$lib/types';
 	import { exportInteractions } from '$lib/api/api_frontend';
-	import { onMount } from 'svelte';
+	import { syncWebuiDB } from '$lib/api/api_frontend';
 
 	export let interactions: Interaction[] = [];
 
@@ -25,6 +25,15 @@
 			errorMessage = '❌ Error al exportar interacciones.';
 		}
 	}
+
+	async function sincronizarWebUI() {
+		try {
+			await syncWebuiDB();
+			location.reload();
+		} catch (err) {
+			alert('Error al sincronizar con webui.db');
+		}
+	}
 </script>
 
 <section class="space-y-4 px-4 py-2">
@@ -33,6 +42,9 @@
 			<p class="text-sm text-gray-500">
 				{interactions.length} interacciones encontradas
 			</p>
+			<button on:click={sincronizarWebUI} class="ml-4 text-sm text-blue-600 hover:underline">
+				🔄 Actualizar interacciones
+			</button>
 			<button
 				class="rounded bg-blue-600 px-4 py-1 text-sm text-white hover:bg-blue-700"
 				on:click={descargarJSON}
