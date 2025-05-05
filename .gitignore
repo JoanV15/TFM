@@ -22,7 +22,7 @@ __pycache__/
 .env.*
 venv/
 webui.db
-
+backend/interactions_export.json
 # =============================
 # 📦 Node.js / Frontend
 # =============================
