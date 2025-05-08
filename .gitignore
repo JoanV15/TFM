@@ -16,8 +16,6 @@ __pycache__/
 *.sqlite3
 *.db
 *.db-journal
-.env
-.env.*
 venv/
 webui.db
 backend/interactions_export.json
